@@ -1,0 +1,127 @@
+//test_version_of_client
+
+#include <iostream>
+using namespace std;
+#pragma comment(lib,"Ws2_32.lib")
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+
+int readn(SOCKET Sock, char *pBuffer, int Size) {
+    while (Size)
+    {
+        int const nBytes=recv (Sock, pBuffer, Size, 0);
+
+                if ((0==nBytes)||(-1==nBytes))
+                {
+                    return -1;
+                }
+                pBuffer +=nBytes;
+                Size -= nBytes;
+    }
+    return 0;
+}
+
+void get_word(char* str, int p)
+{
+    int i=0;
+    while(str[p+i]!='\n')
+    {
+        int C = str[p+i]-'0';
+        printf("%d ",C);
+        i++;
+    }
+    printf("\nFINE");
+}
+
+int main(void)
+{
+   WSADATA wsaData = {0};
+   int res = 0;
+   SOCKET s = INVALID_SOCKET;
+   int iFamily = AF_INET;
+   int iType = SOCK_STREAM;
+   int iProtocol = IPPROTO_TCP;
+    char buffer[512];
+  // char recieve_buf[512]="";
+
+
+   sockaddr_in server;
+
+   res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+   s = socket(iFamily, iType, iProtocol);
+   if (s==INVALID_SOCKET)
+       {
+        printf("failed");
+        return -1;
+        }
+   else {
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_port = htons(27015);
+
+    res = connect(s, (SOCKADDR *) &server, sizeof(server));
+    if (res!=0)
+        return 0;
+    printf("successful connection\n");
+    while(s!=INVALID_SOCKET) {
+    int option=0;
+
+    do {
+		printf("1. Send message;\n");
+		printf("2. Quit;\n");
+
+		printf("Your action: ");
+		scanf("%i", &option);
+
+		switch (option) {
+		case 1:
+			printf("Enter message: ");
+        scanf("%s", buffer);
+
+
+			send(s, buffer, sizeof(buffer), 0);
+
+            if (send(s, buffer, sizeof(buffer), 0)!=SOCKET_ERROR) printf("Message sent!\n");
+			else {printf("Error of sending!\n"); return 0;}
+		break;
+		case 2:
+
+		printf("\n");
+	}
+	}
+	while (option != 2);
+
+
+	// Закрытие сокета и окончание работы с сервером
+
+	//int id=0;
+	//getID of disconnected client
+	char anouncement1[512]="Client with ID+'\n'";
+	char anouncement2[512]=" has been disconnected+'\n'";
+	int id=5;
+
+	char* id_to_string;
+	get_word(id_to_string, id);
+	char buff[512];
+	//buff=anouncement1+id_to_string+anouncement2;
+	//send(s,anouncement1, sizeof(anouncement1),0);
+	//send (s, id_to_string, sizeof(id_to_string),0);
+	//send(s,anouncement2,sizeof(anouncement2),0);
+	//if ((send(s,anouncement1,sizeof(anouncement1),0)!=SOCKET_ERROR) || (send (s, id_to_string, sizeof(id_to_string),0)!=SOCKET_ERROR) || (send(s,anouncement2,sizeof(anouncement2),0)!=SOCKET_ERROR))
+
+	//{
+	    closesocket(s);
+	   // return 0;
+	//   	}
+    return 0;
+}
+
+    }
+}
+
+
+
