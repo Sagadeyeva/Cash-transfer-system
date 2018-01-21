@@ -33,7 +33,7 @@ bool finish=false;
 bool working=true;
 bool serverStart=false;
 
-
+//структура клиента
 struct Arggs
 {
     int sock;
@@ -42,14 +42,14 @@ struct Arggs
     int id;
     bool closure;
 };
-
+//структура кошелька
 struct wallet
 {
     string walletID;
     int value;
     string owner;
 };
-
+//структура для пересылаемых данных
 struct transfer_data
 {
     string wallet_from;
@@ -75,7 +75,8 @@ void get_word(char* str, int p)
     }
     printf("\nFINE");
 }
-
+//разбивает строку по заданному символу delim
+//(используется при разбиении формы запроса по пробелам и извлечения отдельных команд и аргументов)
 vector<string> split(string &s, char delim)
 {
     stringstream ss(s);
@@ -85,13 +86,13 @@ vector<string> split(string &s, char delim)
         tokens.push_back(item);
     return tokens;
 }
-
+// для получения кода команды (не обязательно на самом деле было использовать, просто в процессе так получилось
 string to_upper(string in)
 {
     transform(in.begin(),in.end(), in.begin(), ::toupper);
     return in;
 }
-
+//добавление денег в кошелек(счет)
 int money_addition (string user_input, string wallet_to_rewrite, int sum)
 {
     for (int i=0; i<wallets.size(); i++)
@@ -106,7 +107,7 @@ int money_addition (string user_input, string wallet_to_rewrite, int sum)
     }
     return 0;
 }
-
+//получение вектора кошельков
 vector <wallet> get_wallets(string user_input)
 {
     stringstream ss;
@@ -132,7 +133,7 @@ vector <wallet> get_wallets(string user_input)
     }
     return wallets;
 }
-
+//не используется
 vector <transfer_data> get_receives(string user_input)
 {
     vector<transfer_data>tr;
@@ -163,6 +164,7 @@ vector <transfer_data> get_receives(string user_input)
     }
     return tr;
 }
+//не используется
 vector<transfer_data> get_sends(string inputLogin)
 {
     vector<transfer_data>sends;
@@ -195,7 +197,7 @@ vector<transfer_data> get_sends(string inputLogin)
     return sends;
 }
 
-
+//выделяет из команды аргументы, заполняет их в структуру типа transfer_data и проверяет совпадение
 int receive_money (string user_input, string wallet_to_rewrite, int sum)
 {
     vector <wallet> wallet=get_wallets(user_input);
@@ -214,7 +216,7 @@ int receive_money (string user_input, string wallet_to_rewrite, int sum)
     return 0;
 }
 
-
+//посылка денег опять же по полям структуры перебирает до совпадающего
 int sendSum (string fromUser, string fromWallet, string toUser, string toWallet, int sum)
 {
     for (int i=0; i<wallets.size(); i++)
@@ -240,7 +242,7 @@ int sendSum (string fromUser, string fromWallet, string toUser, string toWallet,
     return 0;
 
 }
-
+//вызывет ,oneyaddition для увеличения счета кошелька, меняет вектор сумм
 void receiveSum (string user_input, string userWallet, string toWallet, int sum)
 {
     vector <transfer_data> tr=get_receives(user_input);
@@ -280,6 +282,7 @@ void receiveSum (string user_input, string userWallet, string toWallet, int sum)
     }
 }
 
+//если клиент хочет создать себе новый кошелек
 int addWallet (string user_input, string walletID)
 {
     wallet w;
@@ -291,6 +294,7 @@ int addWallet (string user_input, string walletID)
 
 }
 
+//внесение нового пользователя в текстовый файл для учета
 int addUser(string login, string password)
 {
     ofstream fs;
@@ -308,7 +312,7 @@ int addUser(string login, string password)
     }
     return 0;
 }
-
+//проверка при авторизации, если есть совпадение с парой логин-пароль в файле, то успешная авторизация
 int login(string login, string password)
 {
     ifstream ifs;
@@ -334,6 +338,7 @@ int login(string login, string password)
     return 0;
 }
 
+//проверка наличия логина в файле(при регистрации нового пользователя, для избегания повторов
 int login_check (string login)
 {
     ifstream ifs;
@@ -357,7 +362,7 @@ int login_check (string login)
     }
     return 0;
 }
-//TODO--------------------------------------------------------------------------------
+//закрытие клиента по айдишнику, введенному сервером
 int closeClient(int ind)
 {
     hMutex.lock();
@@ -396,11 +401,10 @@ int closeClient(int ind)
     return 0;
 }
 
-
+//поток клиента
 int client_thread (Arggs * c)
 {
     char buffer[512];
-    //cout<<c->sock<<endl;
     Arggs *arg = (Arggs*) c;
     int s=c->sock;
     printf("%d\n",s);
@@ -409,20 +413,19 @@ int client_thread (Arggs * c)
     tr.mainSocket=s;
     memset(buffer,0,sizeof(buffer));
     string ires;
-    cout<<"URRRAAA MI STROILI STROILI I NAKONEC DOS TROI LSDOASDKPASflkshdkfba\n";
+    cout<<"new client thread has been created\n";
     int state=0;
 
     vector <transfer_data> receives;
     vector <transfer_data> sends;
     vector <string> tempStr;
 
-    strcpy(buffer,"You can use following commands:\n1) show_wallets\n2) create_wallet <walletName>\n3) put_money <wallet> <sum>\n4) send_money <your login> <your wallet> <toLogin> <toWallet> <sum>\n");
+    strcpy(buffer,"\nYou can use following commands:\n1) show_wallets\n2) create_wallet <walletName>\n3) put_money <wallet> <sum>\n4) send_money <your login> <your wallet> <toLogin> <toWallet> <sum>\n");
 
-    //sendto(s, buffer, strlen(buffer), 0, (struct sockaddr *)&s, sizeof(s));
+
     send(s,buffer,sizeof(buffer),0);
-    // tr.Send(arg->info,buffer);
-    tr.lastCommandId=0;
-    strcpy(buffer,"");
+
+    memset(buffer,0,sizeof(buffer));
     int len = sizeof(s);
 
     while(true)
@@ -431,30 +434,27 @@ int client_thread (Arggs * c)
         {
         case 0:
         {
-            //recvfrom(mainSocket,buff,10000,0,(sockaddr *) &cl, (socklen_t *)&len);
-            //ires=tr.Receive(arg->info);
-            int ires2=recv(s,buffer,sizeof(buffer),0);
-            if(ires=="TIMEOUT")
+            char recvbuf[512]="";
+            int res=recv(s,recvbuf,sizeof(recvbuf),0);
+
+            if (res<0)
             {
-                cout<<ires<<endl;
+                shutdown(s,2);
+                close(s);
                 cout<<"SOCKET_ERROR"<<endl;
-                closeClient(arg->sock);
+                shutdown(s,2);
+                close(s);
+                closeClient(c->id);
                 return 0;
             }
             else
             {
-                std::string rez(buffer);
+                std::string rez(recvbuf);
                 if (count(rez.begin(), rez.end(), ' ')==2)
                 {
-
                     tempStr=split(rez, ' ');
                     string com=to_upper(tempStr[0]);
 
-
-
-                    cout<<com<<endl;
-
-                    strncpy(buffer,"",512);
                     if (com.compare("LOGIN")==0)
                     {
 
@@ -464,20 +464,20 @@ int client_thread (Arggs * c)
                         {
 
                             strcpy(buffer,"S");
-                            tr.Send(arg->info,buffer);
+                            send(s,buffer,sizeof(buffer),0);
 
                             strcpy(buffer,"Successful authorization! Welcome!");
-                            tr.Send(arg->info,buffer);
+                            send(s,buffer, sizeof(buffer),0);
                             username=tempStr[1];
                             state=1;
                         }
                         else
                         {
                             strcpy(buffer,"F");
-                            tr.Send(arg->info,buffer);
+                            send(s,buffer, sizeof(buffer),0);
                             strcpy(buffer,"");
                             strcat(buffer,"Incorrect login");
-                            tr.Send(arg->info,buffer);
+                            send(s,buffer, sizeof(buffer),0);
                         }
                     }
                     else if (com.compare("REGISTER")==0)
@@ -490,20 +490,20 @@ int client_thread (Arggs * c)
                         if (login_check(tempStr[1])==1)
                         {
                             strcpy(buffer,"F");
-                            tr.Send(arg->info,buffer);
+                            send(s,buffer, sizeof(buffer),0);
                             strcpy(buffer,"");
                             strcat(buffer,"Sorry, login has been already taken");
-                            tr.Send(arg->info,buffer);
+                            send(s,buffer, sizeof(buffer),0);
 
                         }
                         else
                         {
                             addUser(tempStr[1], tempStr[2]);
                             strcpy(buffer,"S");
-                            tr.Send(arg->info,buffer);
+                            send(s,buffer, sizeof(buffer),0);
                             strcpy(buffer,"");
                             strcat(buffer,"Successful registration! Welcome:");
-                            tr.Send(arg->info,buffer);
+                            send(s,buffer, sizeof(buffer),0);
                             username=tempStr[1];
                             state=1;
 
@@ -513,22 +513,23 @@ int client_thread (Arggs * c)
                 else
                 {
                     strcpy(buffer,"F");
-                    tr.Send(arg->info,buffer);
+                    send(s,buffer, sizeof(buffer),0);
                     strcpy(buffer,"");
                     strcat(buffer,"Sorry, but the form of your input is incorrect, try again...");
-                    tr.Send(arg->info,buffer);
+                    send(s,buffer, sizeof(buffer),0);
                 }
+}
 
-            }
+
             break;
         }
         case 1:
-
+            int res;
             strncpy(buffer,"",512);
             char walletStr[512]="";
-            ires=tr.Receive(arg->info);
+            res=recv(s,buffer, sizeof(buffer),0);
 
-            if(ires=="TIMEOUT")
+            if(res<0)
             {
                 shutdown(s,2);
                 closeClient(arg->sock);
@@ -558,9 +559,8 @@ int client_thread (Arggs * c)
 
                         char mes[512];
                         strcpy(mes,wal.c_str());
-                        // const char *mes = walletStr.c_str();
                         cout << mes << endl;
-                        tr.Send(arg->info, mes);
+                        send(s, mes, sizeof(mes),0);
                     }
 
                     else if (to_upper(tempStr[0])=="SHOW_RECEIVES")
@@ -582,7 +582,7 @@ int client_thread (Arggs * c)
 
                             strcat(walletStr,msg.c_str());
                         }
-                        tr.Send(arg->info, walletStr);
+                        send(s, walletStr, sizeof(walletStr),0);
                     }
                 }
 
@@ -597,7 +597,7 @@ int client_thread (Arggs * c)
                         addWallet(username, tempStr[1]);
 
                         strcpy(buffer,"New wallet has been created");
-                        tr.Send(arg->info,buffer);
+                        send(s,buffer, sizeof(buffer),0);
                         strcpy(buffer,"");
                     }
                 }
@@ -614,7 +614,7 @@ int client_thread (Arggs * c)
                         money_addition(username, tempStr[1], tempSum);
 
                         strcpy(buffer,"Money has been sent");
-                        tr.Send(arg->info, buffer);
+                        send(s, buffer, sizeof(buffer),0);
                     }
                 }
 
@@ -632,12 +632,12 @@ int client_thread (Arggs * c)
                         if (res==1)
                         {
                             strcpy(buffer,"Your muuniy has been sent!");
-                            tr.Send(arg->info, buffer);
+                            send(s, buffer, sizeof(buffer),0);
                         }
                         else
                         {
                             strcpy(buffer,"Oops, sorry, some problems with your transmission!");
-                            tr.Send(arg->info, buffer);
+                            send(s, buffer, sizeof(buffer),0);
                         }
                     }
                 }
@@ -698,10 +698,7 @@ int acceptNewThread(int s)
 
 
             char tempbuf[512]="Response";
-//
-            //snprintf(tempbuf, sizeof(tempbuf), "%d", htons(server.sin_port));
-            //   sendto(mainSocket, tempbuf, sizeof(tempbuf), 0, (struct sockaddr *) &newClientAdress, size);
-            //    cout<<"Send response failed!"<<endl;
+
             string porto="";
             porto=toString(ntohs(server.sin_port));
             strcpy(tempbuf,porto.c_str());
@@ -757,9 +754,7 @@ int acceptNewThread(int s)
     {
         closeClient(n->sock);
         n->thread->join();
-        //pthread_join(*list_of_clients[disc_index]->thread,NULL);
     }
-    //return 0;
 
 }
 
@@ -812,11 +807,11 @@ int main(int argc, char** argv)
             printf ("connecting...\n");
 
         }
-        //   mainSocket=s;
+
         acceptNewThread(s);
     }
-    /*int option=0;
-    int ind;
+    int option=0;
+
 
     printf("1. Show all clients;\n");
     printf("2. Disconnect specific client;\n");
@@ -862,10 +857,10 @@ int main(int argc, char** argv)
         break;
     }
     }
-    }
 
-    }
-    */
+
+
+
 
     return 0;
 }

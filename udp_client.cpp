@@ -17,7 +17,6 @@
 #include <string.h>
 #include <cstdlib>
 #include <thread>
-//#include "transmision.h"
 
 using namespace std;
 
@@ -29,7 +28,6 @@ bool exitFlag=false;
 bool notLogined=true;
 bool busy=false;
 sockaddr_in server, si_other;
-//transmision tr;
 int slen=sizeof(si_other);
 
 char welcomeMsg[]="Welcome to the server!\nUse one of the following commands to login or register\nLOGIN USER PASSWORD\nREGISTER USER PASSWORD\n";
@@ -52,7 +50,7 @@ int main(int argc, char** argv)
     int s;
     char buf[BUFLEN];
     char message[BUFLEN];
-
+    char loginbuf[BUFLEN];
     int packetNumber=0;
     int counter=0;
 
@@ -109,10 +107,8 @@ int main(int argc, char** argv)
     {
         cout<<"request sent"<<endl;
     }
-    //sendto(clientSocket, sendbuf, sizeof(sendbuf), 0,(struct sockaddr *)&si_other, sizeof(si_other));
-    int si_len=sizeof(si_other);
+     int si_len=sizeof(si_other);
     ires=recvfrom(clientSocket, buf, sizeof(buf), 0,(struct sockaddr *)&si_other,&si_len);
-    //ires=recvfrom(clientSocket, buf, sizeof(buf), 0,(struct sockaddr *)&si_other,&si_len);
     cout<<"recieved port and ip"<<endl;
     if (ires<0)
     {
@@ -146,48 +142,79 @@ int main(int argc, char** argv)
         return 1;
     }
     string rez="#connect";
-    //string tmp="";
     send(clientSocket,rez.c_str(),strlen(rez.c_str()), 0);
+    int res;
+    char menu[512];
+    res=recv(clientSocket,buf, sizeof(buf),0);
+    strcpy(menu, buf);
+    bool authorized=false;
 
-    int tmp=recv(clientSocket, buf, sizeof(buf),0);
-    // string tmp = tr.Receive(si_other);
-    cout<<buf<<endl;
-///////////////&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&///////////////
-//    std::thread *tr = new std::thread(iAmAlive(),std::ref(clientSocket));
-    //CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)iAmAlive,NULL,0,NULL);
-
-    while(!exitFlag)
+    do
     {
-        if(notLogined)
-        {
-            string tosend;
-            getline(cin, tosend);
-            send(clientSocket, tosend.c_str(), sizeof(tosend.c_str()), 0);
-            int tmp;
-            //tr.Send(si_other, tosend);
-            //tmp=tr.Receive(si_other);
-            tmp=recv(clientSocket, buf, sizeof(buf),0);
 
-            if(buf=="Successful login.")
+        std::cout<<"1. Authorize;\n";
+        std::cout<<"2. Quit;\n";
+        std::cout<<"Your action: ";
+        std::string option_str;
+        std::getline(cin, option_str);
+
+        int option = atoi(option_str.c_str());
+
+        switch (option)
+        {
+        case 1:
+        {
+            std::cout<<"Use the following form to authorize: LOGIN username password \n to register: REGISTER username password\n";
+            std::string sendbuf;
+            std::getline(cin, sendbuf);
+            std::strncpy(loginbuf, sendbuf.c_str(),512);
+            res=send(clientSocket,loginbuf,strlen(loginbuf), 0);
+            cout<<"{ \n"<<loginbuf<<"\n}"<<endl;
+            cout<<"authorization info sent"<<endl;
+
+            res=recv(clientSocket, buf, sizeof(buf),0);
+            cout<<buf;
+            if (strcmp(buf, "S")==0)
             {
-                //tmp=tr.Receive(si_other);
-                tmp=recv(clientSocket, buf, sizeof(buf),0);
-                cout<<buf<<endl;
-                notLogined=false;
+                res=recv(clientSocket, buf, sizeof(buf),0);
+                std::cout<<buf<<std::endl;
+                authorized=true;
+                break;
+            }
+            if (strcmp(buf, "F")==0)
+            {
+                res=recv(clientSocket, buf, sizeof(buf),0);
+                std::cout<<buf<<std::endl;
+                break;
             }
         }
-        else
+
+        case 2:
         {
-            int tmp;
-            string tosend;
-            getline(cin, tosend);
-            send(clientSocket, tosend.c_str(), sizeof(tosend.c_str()), 0 );
-            tmp=recv(clientSocket, buf, sizeof(buf), 0 );
-            //tr.Send(si_other, tosend);
-            // tmp=tr.Receive(si_other);
-            cout<<buf<<endl;
+            printf("\n");
+            break;
+        }
         }
     }
-    return 0;
+    while (!authorized);
+
+    while (true)
+    {
+
+        printf("Welcome to the cash-transfer system! %s\n", menu);
+        std::string sendbuffer;
+        std::getline(std::cin, sendbuffer);
+        strcpy(buf,"");
+        strncpy(buf, sendbuffer.c_str(),512);
+        res=send(clientSocket, buf, sizeof(buf),0);
+        int sr=recv(clientSocket, buf,512,0);
+        std::cout<<buf<<std::endl;
+
+
+    }
+
+closesocket(clientSocket);
+
+return 0;
 }
 
