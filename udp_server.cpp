@@ -63,7 +63,6 @@ struct sockaddr_in serverAddress;
 static vector <wallet> wallets;
 vector <Arggs *> list_of_clients;
 
-
 void get_word(char* str, int p)
 {
     int i=0;
@@ -375,6 +374,10 @@ int closeClient(int ind)
             break;
         }
     }
+
+    cout<<"disconnecting client with index"<<endl;
+    cout<<disc_index<<endl;
+
     if (disc_index>=0)
     {
         list_of_clients[disc_index]->closure=true;
@@ -387,8 +390,6 @@ int closeClient(int ind)
         else
         {
             printf("\n Client with ID %d has been disconnected \n",ind);
-//            amount_of_clients--;
-            // shutdown(*list_of_clients[disc_index]->sock, 2);
             close(list_of_clients[disc_index]->sock);
 
             list_of_clients[disc_index]->thread->join();
@@ -420,7 +421,7 @@ int client_thread (Arggs * c)
     vector <transfer_data> sends;
     vector <string> tempStr;
 
-    strcpy(buffer,"\nYou can use following commands:\n1) show_wallets\n2) create_wallet <walletName>\n3) put_money <wallet> <sum>\n4) send_money <your login> <your wallet> <toLogin> <toWallet> <sum>\n");
+    strcpy(buffer,"\nYou can use following commands:\n1) show_wallets\n2) create_wallet <walletName>\n3) put_money <wallet> <sum>\n4) send_money <your login> <your wallet> <toLogin> <toWallet> <sum>\n5) exit");
 
 
     send(s,buffer,sizeof(buffer),0);
@@ -562,7 +563,11 @@ int client_thread (Arggs * c)
                         cout << mes << endl;
                         send(s, mes, sizeof(mes),0);
                     }
-
+                    else if (tempStr[0]=="exit")
+                    {
+                          strcpy(buffer, "EX");
+                          send(s,buffer, sizeof(buffer),0);
+                    }
                     else if (to_upper(tempStr[0])=="SHOW_RECEIVES")
                     {
 
@@ -650,6 +655,73 @@ int client_thread (Arggs * c)
     return 0;
 }
 
+void showClients()
+{
+    for(Arggs * n : list_of_clients)
+    {
+
+        printf("ID: %d %s:%d\n", n->id, inet_ntoa(n->info.sin_addr),htons(n->info.sin_port));
+
+    }
+}
+
+void* serverThread(int s) {
+    int ind=0;
+    printf("Server is on...\n");
+    while (s>=0)
+{
+    int option=0;
+    bool on=true;
+
+while (on==true)
+   { printf("1. Show all clients;\n");
+    printf("2. Disconnect specific client;\n");
+    printf("3. Show all wallets;\n");
+
+
+    printf("Your action:  \n");
+
+
+    std::cin>>option;
+
+    switch (option)
+    {
+    case 1:
+    {
+        showClients();
+        break;
+    }
+    case 2:
+    {
+        showClients();
+        printf("Enter the ID of client to disconnect>>>>>>>> \n");
+        std::cin>>ind;
+        closeClient(ind);
+        break;
+    }
+
+    case 3:
+    {
+        string walletsStr;
+        for(int i=0; i< wallets.size(); i++)
+        {
+            char balance[10]="";
+
+            snprintf(balance,sizeof(balance),"%d",wallets[i].value);
+            string balanceStr(balance);
+            walletsStr += (wallets[i].owner + " <" + wallets[i].walletID+ "> "+balanceStr+"y.e.\n");
+        }
+
+        const char *mes = walletsStr.c_str();
+        cout << mes << endl;
+
+        break;
+        }
+    }
+}
+}
+}
+
 int acceptNewThread(int s)
 {
 
@@ -662,6 +734,7 @@ int acceptNewThread(int s)
     char reciever[512];
     char sent_message[512];
     char buff[512]="";
+    std::thread *s_thread = new std::thread(serverThread,NULL);
 
     while (1)
     {
@@ -762,16 +835,6 @@ int acceptNewThread(int s)
 
 
 
-void showClients()
-{
-    for(Arggs * n : list_of_clients)
-    {
-
-        printf("ID: %d %s:%d\n", n->id, inet_ntoa(n->info.sin_addr),htons(n->info.sin_port));
-
-    }
-}
-
 int main(int argc, char** argv)
 {
     int ind;
@@ -809,7 +872,9 @@ int main(int argc, char** argv)
         }
 
         acceptNewThread(s);
-    }
+
+while (s>=0)
+{
     int option=0;
 
 
@@ -855,11 +920,12 @@ int main(int argc, char** argv)
         cout << mes << endl;
 
         break;
+        }
     }
     }
 
 
-
+}
 
 
     return 0;

@@ -148,7 +148,6 @@ int main(int argc, char** argv)
     res=recv(clientSocket,buf, sizeof(buf),0);
     strcpy(menu, buf);
     bool authorized=false;
-
     do
     {
 
@@ -197,8 +196,8 @@ int main(int argc, char** argv)
         }
     }
     while (!authorized);
-
-    while (true)
+     bool quit=true;
+   while (quit!=false)
     {
 
         printf("Welcome to the cash-transfer system! %s\n", menu);
@@ -209,8 +208,10 @@ int main(int argc, char** argv)
         res=send(clientSocket, buf, sizeof(buf),0);
         int sr=recv(clientSocket, buf,512,0);
         std::cout<<buf<<std::endl;
-
-
+       if (strcmp(buf, "EX")==0) {
+            quit=false;
+            cout<<quit;
+        }
     }
 
 closesocket(clientSocket);
